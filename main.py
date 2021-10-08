@@ -1,0 +1,8 @@
+from src.modules import *
+
+user = "admin-001"
+password = "idiot6563"
+project_name = "Makeeasy"
+db_name = "gajafinance"
+
+
