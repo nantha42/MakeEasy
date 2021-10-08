@@ -1,10 +1,5 @@
 from src.modules import *
 
-user = "admin-001"
-password = "idiot6563"
-project_name = "Makeeasy"
-db_name = "gajafinance"
-
 
 def test_add_pays():
     app = App(user, password, project_name, db_name)
