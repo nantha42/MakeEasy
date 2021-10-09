@@ -90,7 +90,7 @@ class App:
     def add_debit_past(self, customer_id, time_str: str, amount, reason=""):
         if not self.exists_customer(customer_id):
             print("No user exists")
-            return None
+            return "Error"
 
         debit_id = self.db.debits.find({"customer_id": customer_id}).count() + 1
         time_obj = datetime.utcfromtimestamp(time.mktime(time.strptime(time_str, "%Y:%m:%d")))
@@ -106,7 +106,7 @@ class App:
     def add_past_pay(self, customer_id, debit_id, amount, time_str):
         if not self.exists_debit(customer_id, debit_id):
             print("No such debit_id or customer_id exists")
-            return
+            return "Error"
 
         debit = self.db.debits.find_one({"customer_id": customer_id, "debit_id": debit_id})
         time_obj = datetime.utcfromtimestamp(time.mktime(time.strptime(time_str, "%Y:%m:%d")))
@@ -146,7 +146,7 @@ class App:
     def add_pay(self, customer_id, debit_id, amount):
         if not self.exists_debit(customer_id, debit_id):
             print("No such debit_id or customer_id exists")
-            return
+            return "Error"
 
         debit = self.db.debits.find_one({"customer_id": customer_id, "debit_id": debit_id})
         pays = debit["pays"]
@@ -209,8 +209,14 @@ class App:
     def get_debit_principal(self, customer_id, debit_id):
         if not self.exists_debit(customer_id, debit_id):
             print("No such debit_id or customer_id exists")
-            return
+            return "Error"
 
         debit = self.db.debits.find_one({"customer_id": customer_id, "debit_id": debit_id})
         pay = debit["pays"][-1]
         return pay["principal"]
+
+    def get_customers_debits(self,customer_id):
+        if not self.exists_customer(customer_id=customer_id):
+            print("No such customer_id exists")
+            return "Error"
+        return self.db.debits.find({"customer_id":customer_id})
