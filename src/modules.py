@@ -39,31 +39,33 @@ class App:
     def get_user(self, customer_id):
         return self.db["customers"].find({"customer_id": customer_id})
 
-    def get_users_count(self):
-        records = self.db.customers.count()
+    def get_users_count(self, mode="production"):
+        records = self.db.customers.find({"mode": mode}).count()
         return records
 
-    def add_user(self, name, mobile, address: dict):
-        id = self.get_users_count() + 1
+    def add_user(self, name, mobile, address: dict, mode="production"):
+        id = self.get_users_count(mode) + 1
         result = self.db.customers.insert_one({
             "customer_id": id,
             "name": name,
             "mobile": mobile,
-            "address": address
+            "address": address,
+            "mode": mode
         })
         print("Inserted id:", result.inserted_id)
+        return id
 
-    def exists_customer(self, customer_id):
-        res = self.db.customers.find({"customer_id": customer_id})
-        if res.count() == 1:
+    def exists_customer(self, customer_id, mode="production"):
+        res = self.db.customers.count_documents({"customer_id": customer_id, "mode": mode})
+        if res == 1:
             return True
         else:
             return False
 
-    def exists_debit(self, customer_id, debit_id):
-        if self.exists_customer(customer_id):
-            res = self.db.debits.find({"debit_id": debit_id, "customer_id": customer_id})
-            if res.count() == 1:
+    def exists_debit(self, customer_id, debit_id, mode="production"):
+        if self.exists_customer(customer_id, mode):
+            res = self.db.debits.count_documents({"debit_id": debit_id, "customer_id": customer_id, "mode": mode})
+            if res == 1:
                 return True
             else:
                 return False
@@ -71,44 +73,45 @@ class App:
             print("No customer in that id")
             return False
 
-    def add_debit(self, customer_id, amount: int, reason="", ):
-        if not self.exists_customer(customer_id):
-            print("No user exists")
+    def add_debit(self, customer_id, amount: int, reason="", mode="production"):
+        if not self.exists_customer(customer_id, mode):
+            print("No user exists, cannot add debit")
             return None
 
         debit_id = self.db.debits.find({"customer_id": customer_id}).count() + 1
-
         result = self.db.debits.insert_one({"customer_id": customer_id,
                                             "debit_id": debit_id,
                                             "time": datetime.utcnow(),
                                             "principal": amount,
                                             "reason": reason,
-                                            "pays": []
+                                            "pays": [],
+                                            "mode": mode
                                             })
-        return result.inserted_id
+        return debit_id
 
-    def add_debit_past(self, customer_id, time_str: str, amount, reason=""):
-        if not self.exists_customer(customer_id):
-            print("No user exists")
+    def add_debit_past(self, customer_id, time_str: str, amount, reason="", mode="production"):
+        if not self.exists_customer(customer_id, mode):
+            print("No user exists, cannot add debit past")
             return "Error"
 
-        debit_id = self.db.debits.find({"customer_id": customer_id}).count() + 1
+        debit_id = self.db.debits.find({"customer_id": customer_id, "mode": mode}).count() + 1
         time_obj = datetime.utcfromtimestamp(time.mktime(time.strptime(time_str, "%Y:%m:%d")))
         result = self.db.debits.insert_one({"customer_id": customer_id,
                                             "debit_id": debit_id,
                                             "time": time_obj,
                                             "principal": amount,
                                             "reason": reason,
-                                            "pays": []
+                                            "pays": [],
+                                            "mode": mode
                                             })
-        return result.inserted_id
+        return debit_id
 
-    def add_past_pay(self, customer_id, debit_id, amount, time_str):
-        if not self.exists_debit(customer_id, debit_id):
-            print("No such debit_id or customer_id exists")
+    def add_past_pay(self, customer_id, debit_id, amount, time_str, mode="production"):
+        if not self.exists_debit(customer_id, debit_id, mode):
+            print("No such debit_id or customer_id exists, cannot add past pay")
             return "Error"
 
-        debit = self.db.debits.find_one({"customer_id": customer_id, "debit_id": debit_id})
+        debit = self.db.debits.find_one({"customer_id": customer_id, "debit_id": debit_id, "mode": mode})
         time_obj = datetime.utcfromtimestamp(time.mktime(time.strptime(time_str, "%Y:%m:%d")))
         pays = debit["pays"]
 
@@ -133,7 +136,7 @@ class App:
             debit_date = datetime.date(debit["time"])
             current_date = datetime.date(time_obj)
             diff = (current_date - debit_date).days
-            print("Days: ",diff)
+            print("Days: ", diff)
             pay_obj = self.pay(amount, diff, principal, time_obj)
             pays.append(pay_obj)
             self.db.debits.update_one({"customer_id": customer_id,
@@ -143,12 +146,12 @@ class App:
 
                                       })
 
-    def add_pay(self, customer_id, debit_id, amount):
-        if not self.exists_debit(customer_id, debit_id):
-            print("No such debit_id or customer_id exists")
+    def add_pay(self, customer_id, debit_id, amount, mode="production"):
+        if not self.exists_debit(customer_id, debit_id, mode):
+            print("No such debit_id or customer_id exists, cannot add pay")
             return "Error"
 
-        debit = self.db.debits.find_one({"customer_id": customer_id, "debit_id": debit_id})
+        debit = self.db.debits.find_one({"customer_id": customer_id, "debit_id": debit_id, "mode": mode})
         pays = debit["pays"]
 
         if len(pays) > 0:
@@ -187,7 +190,7 @@ class App:
 
     def pay(self, amount, diff, principal, time_obj, interest_balance=0):
         total_interest = diff * self.interest * principal + interest_balance
-        print("Interest_Amoung: %s"%(total_interest))
+        print("Interest_Amoung: %s" % (total_interest))
         if total_interest <= amount:
             interest_paying = total_interest
             interest_balance = 0
@@ -195,7 +198,7 @@ class App:
             interest_paying = amount
             interest_balance = total_interest - amount
         remaining = amount - interest_paying
-        print("Remaining amount: %s"%(remaining))
+        print("Remaining amount: %s" % (remaining))
         principal_remaining = principal - remaining
         pay_obj = {
             "principal": principal_remaining,
@@ -206,17 +209,23 @@ class App:
         pprint(pay_obj)
         return pay_obj
 
-    def get_debit_principal(self, customer_id, debit_id):
-        if not self.exists_debit(customer_id, debit_id):
+    def get_debit_principal(self, customer_id, debit_id, mode="production"):
+        if not self.exists_debit(customer_id, debit_id, mode=mode):
             print("No such debit_id or customer_id exists")
             return "Error"
 
-        debit = self.db.debits.find_one({"customer_id": customer_id, "debit_id": debit_id})
+        debit = self.db.debits.find_one({"customer_id": customer_id, "debit_id": debit_id, "mode": mode})
         pay = debit["pays"][-1]
         return pay["principal"]
 
-    def get_customers_debits(self,customer_id):
-        if not self.exists_customer(customer_id=customer_id):
+    def get_customers_debits(self, customer_id, mode="production"):
+        if not self.exists_customer(customer_id=customer_id, mode=mode):
             print("No such customer_id exists")
             return "Error"
-        return self.db.debits.find({"customer_id":customer_id})
+        return self.db.debits.find({"customer_id": customer_id, "mode": mode})
+
+    def delete_all_debits(self, mode="test"):
+        return self.db.debits.delete_many({"mode": mode})
+
+    def delete_all_users(self, mode="test"):
+        return self.db.customers.delete_many({"mode": mode})
