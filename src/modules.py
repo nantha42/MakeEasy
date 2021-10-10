@@ -1,6 +1,7 @@
 import time
 from datetime import datetime
 from pprint import pprint
+import json
 
 import certifi
 from pymongo import MongoClient
@@ -13,8 +14,8 @@ interest = 0.001
 
 class App:
 
-    def __init__(self, u, p, proj, db_name):
-        access_obj = self.get_access_object(u, p, proj, db_name)
+    def __init__(self, credential_file):
+        access_obj = self.read_credentials(credential_file)
         self.client = None
         self.db = self.get_database(access_obj)
         self.interest = interest
@@ -40,7 +41,7 @@ class App:
         return self.db["customers"].find({"customer_id": customer_id})
 
     def get_users_count(self, mode="production"):
-        records = self.db.customers.find({"mode": mode}).count()
+        records = self.db.customers.count_documents({"mode": mode})
         return records
 
     def add_user(self, name, mobile, address: dict, mode="production"):
@@ -94,7 +95,7 @@ class App:
             print("No user exists, cannot add debit past")
             return "Error"
 
-        debit_id = self.db.debits.find({"customer_id": customer_id, "mode": mode}).count() + 1
+        debit_id = self.db.debits.count_documents({"customer_id": customer_id, "mode": mode}) + 1
         time_obj = datetime.utcfromtimestamp(time.mktime(time.strptime(time_str, "%Y:%m:%d")))
         result = self.db.debits.insert_one({"customer_id": customer_id,
                                             "debit_id": debit_id,
@@ -229,3 +230,15 @@ class App:
 
     def delete_all_users(self, mode="test"):
         return self.db.customers.delete_many({"mode": mode})
+
+    def read_credentials(self, filename=".password.json"):
+        with open(filename, "r") as f:
+            obj = json.load(f)
+            user = obj["user"]
+            password = obj["password"]
+            project_name = obj["project_name"]
+            db_name = obj["db_name"]
+            object = self.get_access_object(user, password, project_name, db_name)
+            return object
+
+
