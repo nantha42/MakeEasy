@@ -1,7 +1,7 @@
+import json
 import time
 from datetime import datetime
 from pprint import pprint
-import json
 
 import certifi
 from pymongo import MongoClient
@@ -210,6 +210,13 @@ class App:
         pprint(pay_obj)
         return pay_obj
 
+    def calculate_interest(self, amount, startdate, enddate):
+        d1 = datetime.date(startdate)
+        d2 = datetime.date(enddate)
+        diff = (d2 - d1).days
+        I = diff * self.interest * amount
+        return I
+
     def get_debit_principal(self, customer_id, debit_id, mode="production"):
         if not self.exists_debit(customer_id, debit_id, mode=mode):
             print("No such debit_id or customer_id exists")
@@ -241,4 +248,19 @@ class App:
             object = self.get_access_object(user, password, project_name, db_name)
             return object
 
-
+    def get_user_debits(self, customerid, mode="production"):
+        if not self.exists_customer(customer_id=customerid, mode=mode):
+            print(f"No such customer_id exists, cannot get for userid {customerid} debits")
+            return "Error"
+        debits = self.db.debits.find({"customer_id": customerid, "mode": mode})
+        for debit in debits:
+            time_bought = debit["time"]
+            if len(debit["pays"]) == 0:
+                principal_balance = debit["principal"]
+                print(f"Time: {time_bought} {datetime.utcnow()}")
+                I = self.calculate_interest(principal_balance, debit["time"], datetime.utcnow())
+            else:
+                principal_balance = debit["pays"][-1]["principal"]
+                last_pay_obj = debit["pays"][-1]["time"]
+                I = self.calculate_interest(principal_balance, last_pay_obj, datetime.utcnow())
+            print(f"Time Bought : {time_bought} Principal Balance : {principal_balance} Interest : {I}")

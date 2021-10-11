@@ -37,6 +37,9 @@ def test_get_customers_debits():
     for ob in obj:
         pprint(ob)
 
+def test_get_user_debits():
+    app = App(".password.json")
+    app.get_user_debits(1,mode="test")
 
 if __name__ == '__main__':
     test_get_customers_debits()
