@@ -1,6 +1,8 @@
+import json
 import time
 from datetime import datetime
 from pprint import pprint
+import pytz
 
 import certifi
 from pymongo import MongoClient
@@ -13,8 +15,8 @@ interest = 0.001
 
 class App:
 
-    def __init__(self, u, p, proj, db_name):
-        access_obj = self.get_access_object(u, p, proj, db_name)
+    def __init__(self, credential_file):
+        access_obj = self.read_credentials(credential_file)
         self.client = None
         self.db = self.get_database(access_obj)
         self.interest = interest
@@ -40,7 +42,7 @@ class App:
         return self.db["customers"].find({"customer_id": customer_id})
 
     def get_users_count(self, mode="production"):
-        records = self.db.customers.find({"mode": mode}).count()
+        records = self.db.customers.count_documents({"mode": mode})
         return records
 
     def add_user(self, name, mobile, address: dict, mode="production"):
@@ -94,8 +96,9 @@ class App:
             print("No user exists, cannot add debit past")
             return "Error"
 
-        debit_id = self.db.debits.find({"customer_id": customer_id, "mode": mode}).count() + 1
-        time_obj = datetime.utcfromtimestamp(time.mktime(time.strptime(time_str, "%Y:%m:%d")))
+        debit_id = self.db.debits.count_documents({"customer_id": customer_id, "mode": mode}) + 1
+        time_str += " 05:30"
+        time_obj = datetime.utcfromtimestamp(time.mktime(time.strptime(time_str, "%Y:%m:%d %H:%M")))
         result = self.db.debits.insert_one({"customer_id": customer_id,
                                             "debit_id": debit_id,
                                             "time": time_obj,
@@ -112,7 +115,8 @@ class App:
             return "Error"
 
         debit = self.db.debits.find_one({"customer_id": customer_id, "debit_id": debit_id, "mode": mode})
-        time_obj = datetime.utcfromtimestamp(time.mktime(time.strptime(time_str, "%Y:%m:%d")))
+        time_str += " 05:30"
+        time_obj = datetime.utcfromtimestamp(time.mktime(time.strptime(time_str, "%Y:%m:%d %H:%M")))
         pays = debit["pays"]
 
         if len(pays) > 0:
@@ -209,6 +213,15 @@ class App:
         pprint(pay_obj)
         return pay_obj
 
+    def calculate_interest(self, amount, startdate, enddate):
+        tz = pytz.timezone("Asia/Kolkata")
+        d1 = datetime.date(startdate)
+        d2 = datetime.date(enddate)
+        print(d1,d2)
+        diff = (d2 - d1).days
+        I = diff * self.interest * amount
+        return I
+
     def get_debit_principal(self, customer_id, debit_id, mode="production"):
         if not self.exists_debit(customer_id, debit_id, mode=mode):
             print("No such debit_id or customer_id exists")
@@ -229,3 +242,30 @@ class App:
 
     def delete_all_users(self, mode="test"):
         return self.db.customers.delete_many({"mode": mode})
+
+    def read_credentials(self, filename=".password.json"):
+        with open(filename, "r") as f:
+            obj = json.load(f)
+            user = obj["user"]
+            password = obj["password"]
+            project_name = obj["project_name"]
+            db_name = obj["db_name"]
+            object = self.get_access_object(user, password, project_name, db_name)
+            return object
+
+    def get_user_debits(self, customerid, mode="production"):
+        if not self.exists_customer(customer_id=customerid, mode=mode):
+            print(f"No such customer_id exists, cannot get for userid {customerid} debits")
+            return "Error"
+        debits = self.db.debits.find({"customer_id": customerid, "mode": mode})
+        for debit in debits:
+            time_bought = debit["time"]
+            if len(debit["pays"]) == 0:
+                principal_balance = debit["principal"]
+                print(f"Time: {time_bought} {datetime.utcnow()}")
+                I = self.calculate_interest(principal_balance, debit["time"], datetime.utcnow())
+            else:
+                principal_balance = debit["pays"][-1]["principal"]
+                last_pay_obj = debit["pays"][-1]["time"]
+                I = self.calculate_interest(principal_balance, last_pay_obj, datetime.utcnow())
+            print(f"Time Bought : {time_bought} Principal Balance : {principal_balance} Interest : {I}")

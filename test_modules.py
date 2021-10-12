@@ -2,16 +2,10 @@ import json
 
 from src.modules import *
 
-with open(".password.json", "r") as f:
-    obj = json.load(f)
-    user = obj["user"]
-    password = obj["password"]
-    project_name = obj["project_name"]
-    db_name = obj["db_name"]
 
 
 def test_add_pays():
-    app = App(user, password, project_name, db_name)
+    app = App(".password.json")
     app.db.debits.delete_many({})
     app.delete_all_debits(mode="test")
     app.delete_all_users(mode="test")
@@ -25,13 +19,13 @@ def test_add_pays():
 
 
 def test_create_debit_for_non_exist_customer():
-    app = App(user, password, project_name, db_name)
+    app = App(".password.json")
     app.delete_all_debits(mode="test")
     assert app.add_debit_past(5, "2021:4:1", 1000, mode="test") == "Error"
 
 
 def test_get_customers_debits():
-    app = App(user, password, project_name, db_name)
+    app = App(".password.json")
     userid = app.add_user("Rajinikanth", "123434567", {"door": "12", "street": "boyes garden"}, mode="test")
     app.add_debit_past(userid, "2021:4:1", 1000, mode="test")
     app.delete_all_debits(mode="test")
@@ -43,6 +37,9 @@ def test_get_customers_debits():
     for ob in obj:
         pprint(ob)
 
+def test_get_user_debits():
+    app = App(".password.json")
+    app.get_user_debits(1,mode="test")
 
 if __name__ == '__main__':
     test_get_customers_debits()
