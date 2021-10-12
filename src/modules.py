@@ -2,6 +2,7 @@ import json
 import time
 from datetime import datetime
 from pprint import pprint
+import pytz
 
 import certifi
 from pymongo import MongoClient
@@ -96,7 +97,8 @@ class App:
             return "Error"
 
         debit_id = self.db.debits.count_documents({"customer_id": customer_id, "mode": mode}) + 1
-        time_obj = datetime.utcfromtimestamp(time.mktime(time.strptime(time_str, "%Y:%m:%d")))
+        time_str += " 05:30"
+        time_obj = datetime.utcfromtimestamp(time.mktime(time.strptime(time_str, "%Y:%m:%d %H:%M")))
         result = self.db.debits.insert_one({"customer_id": customer_id,
                                             "debit_id": debit_id,
                                             "time": time_obj,
@@ -113,7 +115,8 @@ class App:
             return "Error"
 
         debit = self.db.debits.find_one({"customer_id": customer_id, "debit_id": debit_id, "mode": mode})
-        time_obj = datetime.utcfromtimestamp(time.mktime(time.strptime(time_str, "%Y:%m:%d")))
+        time_str += " 05:30"
+        time_obj = datetime.utcfromtimestamp(time.mktime(time.strptime(time_str, "%Y:%m:%d %H:%M")))
         pays = debit["pays"]
 
         if len(pays) > 0:
@@ -211,8 +214,10 @@ class App:
         return pay_obj
 
     def calculate_interest(self, amount, startdate, enddate):
+        tz = pytz.timezone("Asia/Kolkata")
         d1 = datetime.date(startdate)
         d2 = datetime.date(enddate)
+        print(d1,d2)
         diff = (d2 - d1).days
         I = diff * self.interest * amount
         return I
