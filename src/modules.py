@@ -35,8 +35,12 @@ class App:
     def get_database(self, access_object):
         u, p, proj, db = self.parse_access_object(access_object)
         uri = f"mongodb+srv://{u}:{p}@turiyam.9qfeb.mongodb.net/{proj}?retryWrites=true&w=majority"
-        self.client = MongoClient(uri, tlsCAFile=certifi.where())
-        return self.client[db]
+        try:
+            self.client = MongoClient(uri, tlsCAFile=certifi.where())
+            return self.client[db]
+        except:
+            print("Difficulty in Logging in, Check Internet Connection")
+            exit()
 
     def get_user(self, customer_id):
         return self.db["customers"].find({"customer_id": customer_id})
