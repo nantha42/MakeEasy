@@ -1,7 +1,7 @@
 from src.modules import *
 
 
-#@app.route("/")
+@app.route("/")
 #def home():
 #    return "<p>Hello</p>"
 #
