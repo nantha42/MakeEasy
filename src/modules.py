@@ -42,8 +42,8 @@ class App:
             print("Difficulty in Logging in, Check Internet Connection")
             exit()
 
-    def get_user(self, customer_id):
-        return self.db["customers"].find({"customer_id": customer_id})
+    def get_user(self, customer_id,mode="production"):
+        return self.db["customers"].find_one({"customer_id": customer_id,"mode":mode})
 
     def get_users_count(self, mode="production"):
         records = self.db.customers.count_documents({"mode": mode})
@@ -262,6 +262,7 @@ class App:
             print(f"No such customer_id exists, cannot get for userid {customerid} debits")
             return "Error"
         debits = self.db.debits.find({"customer_id": customerid, "mode": mode})
+        return_obj = []
         for debit in debits:
             time_bought = debit["time"]
             if len(debit["pays"]) == 0:
@@ -272,4 +273,13 @@ class App:
                 principal_balance = debit["pays"][-1]["principal"]
                 last_pay_obj = debit["pays"][-1]["time"]
                 I = self.calculate_interest(principal_balance, last_pay_obj, datetime.utcnow())
+            return_obj.append({"time":time_bought, "principal":principal_balance, "interest": I})
+
             print(f"Time Bought : {time_bought} Principal Balance : {principal_balance} Interest : {I}")
+        return return_obj
+
+    def imports_customer(self):
+        pass
+
+    def export_data(self):
+        pass
