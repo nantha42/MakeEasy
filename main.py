@@ -31,6 +31,6 @@ if __name__ == '__main__':
     fin = App(".password.json")
     customerid = 1
     # debitid = app.add_debit_past(customer_id=customerid, time_str="2021:10:10", amount=10000, reason="no interest")
-    fin.get_user_debits(1, mode="production")
+    fin.get_customer_debit_summary(1, mode="production")
     app.run()
     pass
