@@ -2,6 +2,7 @@ import json
 import time
 from datetime import datetime
 from pprint import pprint
+from bson.json_util import dumps
 
 import certifi
 import pytz
@@ -291,8 +292,15 @@ class App:
     #                 if last_date.month != 2:
     #                     if last_date.day ==1:
 
-    def imports_customer(self):
-        pass
+    def import_data(self,mode="production"):
+        customers_cursor = self.db.customers.find({"mode":mode})
+        debits_cursor = self.db.debits.find({"mode":mode})
+
+        with open('customers.json','w') as file:
+            json.dump(json.loads(dumps(customers_cursor)),file)
+
+        with open('debits.json','w') as file:
+            json.dump(json.loads(dumps(debits_cursor)),file)
 
     def export_data(self):
         pass

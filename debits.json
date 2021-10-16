@@ -1,0 +1,1 @@
+[{"_id": {"$oid": "616b05039effabeda61e286d"}, "customer_id": 1, "debit_id": 1, "time": {"$date": 1633824000000}, "principal": 10000, "reason": "no interest", "pays": [], "mode": "production"}]

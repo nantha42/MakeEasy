@@ -30,7 +30,8 @@ if __name__ == '__main__':
     # customerid = app.add_user("Kannima Husband","1234567890",{})
     fin = App(".password.json")
     customerid = 1
-    # debitid = app.add_debit_past(customer_id=customerid, time_str="2021:10:10", amount=10000, reason="no interest")
+    debitid = fin.add_debit_past(customer_id=customerid, time_str="2021:10:10", amount=10000, reason="no interest",mode="production")
     fin.get_customer_debit_summary(1, mode="production")
-    app.run()
+    fin.import_data()
+    #app.run()
     pass
