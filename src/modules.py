@@ -2,9 +2,10 @@ import json
 import time
 from datetime import datetime
 from pprint import pprint
-import pytz
+from bson.json_util import dumps
 
 import certifi
+import pytz
 from pymongo import MongoClient
 
 collection_user = "customers"
@@ -35,11 +36,15 @@ class App:
     def get_database(self, access_object):
         u, p, proj, db = self.parse_access_object(access_object)
         uri = f"mongodb+srv://{u}:{p}@turiyam.9qfeb.mongodb.net/{proj}?retryWrites=true&w=majority"
-        self.client = MongoClient(uri, tlsCAFile=certifi.where())
-        return self.client[db]
+        try:
+            self.client = MongoClient(uri, tlsCAFile=certifi.where())
+            return self.client[db]
+        except:
+            print("Difficulty in Logging in, Check Internet Connection")
+            exit()
 
-    def get_user(self, customer_id):
-        return self.db["customers"].find({"customer_id": customer_id})
+    def get_user(self, customer_id, mode="production"):
+        return self.db["customers"].find_one({"customer_id": customer_id, "mode": mode})
 
     def get_users_count(self, mode="production"):
         records = self.db.customers.count_documents({"mode": mode})
@@ -217,7 +222,7 @@ class App:
         tz = pytz.timezone("Asia/Kolkata")
         d1 = datetime.date(startdate)
         d2 = datetime.date(enddate)
-        print(d1,d2)
+        print(d1, d2)
         diff = (d2 - d1).days
         I = diff * self.interest * amount
         return I
@@ -253,11 +258,12 @@ class App:
             object = self.get_access_object(user, password, project_name, db_name)
             return object
 
-    def get_user_debits(self, customerid, mode="production"):
+    def get_customer_debit_summary(self, customerid, mode="production"):
         if not self.exists_customer(customer_id=customerid, mode=mode):
             print(f"No such customer_id exists, cannot get for userid {customerid} debits")
             return "Error"
         debits = self.db.debits.find({"customer_id": customerid, "mode": mode})
+        return_obj = []
         for debit in debits:
             time_bought = debit["time"]
             if len(debit["pays"]) == 0:
@@ -268,4 +274,33 @@ class App:
                 principal_balance = debit["pays"][-1]["principal"]
                 last_pay_obj = debit["pays"][-1]["time"]
                 I = self.calculate_interest(principal_balance, last_pay_obj, datetime.utcnow())
+            return_obj.append({"time": time_bought, "principal": principal_balance, "interest": I})
+
             print(f"Time Bought : {time_bought} Principal Balance : {principal_balance} Interest : {I}")
+        return return_obj
+
+    # def get_due_customers(self,mode="production"):
+    #     customers = self.db.customers.find({"mode":mode})
+    #     today = datetime.date(datetime.utcnow())
+    #     for customer in customers:
+    #         debits = self.db.debits.find({"customer_id":customer["customer_id"],"mode":mode})
+    #         for debit in debits:
+    #             pays = debit["pays"]
+    #             if len(pays) > 0:
+    #                 last_pay = pays[-1]
+    #                 last_date = datetime.date(last_pay[-1])
+    #                 if last_date.month != 2:
+    #                     if last_date.day ==1:
+
+    def import_data(self,mode="production"):
+        customers_cursor = self.db.customers.find({"mode":mode})
+        debits_cursor = self.db.debits.find({"mode":mode})
+
+        with open('customers.json','w') as file:
+            json.dump(json.loads(dumps(customers_cursor)),file)
+
+        with open('debits.json','w') as file:
+            json.dump(json.loads(dumps(debits_cursor)),file)
+
+    def export_data(self):
+        pass
