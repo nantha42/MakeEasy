@@ -292,7 +292,7 @@ class App:
     #                 if last_date.month != 2:
     #                     if last_date.day ==1:
 
-    def import_data(self,mode="production"):
+    def export_data(self,mode="production"):
         customers_cursor = self.db.customers.find({"mode":mode})
         debits_cursor = self.db.debits.find({"mode":mode})
 
@@ -302,5 +302,5 @@ class App:
         with open('debits.json','w') as file:
             json.dump(json.loads(dumps(debits_cursor)),file)
 
-    def export_data(self):
+    def import_data(self):
         pass
