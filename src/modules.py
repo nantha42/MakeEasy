@@ -303,4 +303,13 @@ class App:
             json.dump(json.loads(dumps(debits_cursor)),file)
 
     def import_data(self):
+        with open("customers.json",'r') as file:
+            customers = json.load(file)
+            self.db.customers.insert_many(customers)
+            print(f"Inserted {len(customers)} customers records")
+
+        with open("debits.json","r") as file:
+            debits = json.load(file)
+            self.db.debits.insert_many(debits)
+            print(f"Inserted {len(debits)} debit records")
         pass

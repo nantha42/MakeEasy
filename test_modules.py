@@ -2,6 +2,7 @@ import json
 
 from src.modules import *
 
+password_file = ".password.json"
 
 
 def test_add_pays():
@@ -38,8 +39,12 @@ def test_get_customers_debits():
         pprint(ob)
 
 def test_get_user_debits():
-    app = App(".password.json")
-    app.get_user_debits(1,mode="test")
+    app = App(password_file)
+    app.get_customers_debits(1,mode="test")
+
+def test_import_data():
+    app = App(password_file)
+    app.import_data()
 
 if __name__ == '__main__':
     test_get_customers_debits()
