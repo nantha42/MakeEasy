@@ -9,7 +9,7 @@ def test_add_pays():
     app = App(".password.json")
     app.db.debits.delete_many({})
     app.delete_all_debits(mode="test")
-    app.delete_all_users(mode="test")
+    app.delete_all_customers(mode="test")
     userid = app.add_user("Rajinikanth", "123434567", {"door": "12", "street": "boyes garden"}, mode="test")
     debitid = app.add_debit_past(userid, "2021:4:1", 1000, mode="test")
     app.add_past_pay(customer_id=userid, debit_id=debitid, amount=200, time_str="2021:6:1", mode="test")
@@ -44,7 +44,11 @@ def test_get_user_debits():
 
 def test_import_data():
     app = App(password_file)
-    app.import_data()
+    app.import_data(add_mode="dummies")
+    print(app.get_users_count(mode="dummies"))
+    print(app.delete_all_debits(mode="dummies"))
+    print(app.delete_all_customers(mode="dummies"))
 
 if __name__ == '__main__':
-    test_get_customers_debits()
+    # test_get_customers_debits()
+    test_import_data()

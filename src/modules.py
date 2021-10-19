@@ -245,7 +245,7 @@ class App:
     def delete_all_debits(self, mode="test"):
         return self.db.debits.delete_many({"mode": mode})
 
-    def delete_all_users(self, mode="test"):
+    def delete_all_customers(self, mode="test"):
         return self.db.customers.delete_many({"mode": mode})
 
     def read_credentials(self, filename=".password.json"):
@@ -302,14 +302,22 @@ class App:
         with open('debits.json','w') as file:
             json.dump(json.loads(dumps(debits_cursor)),file)
 
-    def import_data(self):
+    def import_data(self,add_mode=""):
         with open("customers.json",'r') as file:
             customers = json.load(file)
+            for c in customers:
+                c["_id"] = c["_id"]["$oid"]
+                if add_mode != "":
+                    c["mode"] = add_mode
             self.db.customers.insert_many(customers)
             print(f"Inserted {len(customers)} customers records")
 
         with open("debits.json","r") as file:
             debits = json.load(file)
+            for c in debits:
+                c["_id"] = c["_id"]["$oid"]
+                if add_mode != "":
+                    c["mode"] = add_mode
             self.db.debits.insert_many(debits)
             print(f"Inserted {len(debits)} debit records")
         pass
