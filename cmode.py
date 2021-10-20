@@ -5,7 +5,7 @@ from pprint import pprint
 class CMode:
     def __init__(self,mode):
         password = ".password.json"
-        self.options = ["create customer","show customers","create debit","delete user","delete debit","quit"]
+        self.options = ["create customer","show customers","show debits","create pay","create debit","delete customer","delete debit","quit"]
         self.app = App(password)
         self.quit = False
         self.mode =mode
@@ -28,8 +28,13 @@ class CMode:
                               {"doorno":doorno,
                                "street":street},
                               self.mode)
-        if opt == "create debit":
 
+        if opt == "create debit":
+            id = int(input("Enter Customer id: "))
+            enter_date = input("yyy:mm:dd Date: ")
+            amount = int(input("Enter amount"))
+            reason = input("Debit reason")
+            print(f"Debit id: {self.app.add_debit_past(id,enter_date,amount,reason,self.mode)}")
             pass
 
         if opt == "show customers":
@@ -39,9 +44,16 @@ class CMode:
                 print(f"{id:<3} : {cus['name']:20s}")
             print()
 
-
-
-
+        if opt == "show debits":
+            print("enter customer id or -1 for all debits")
+            id = int(input("customer id: "))
+            if id != -1:
+                self.app.get_customer_debit_summary(id,self.mode)
+            else:
+                count = self.app.get_users_count(self.mode)
+                for id in range(1,count+1):
+                    self.app.get_customer_debit_summary(id,self.mode)
+                pass
 
 
     def run(self):

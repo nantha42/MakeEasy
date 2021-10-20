@@ -50,6 +50,9 @@ class App:
         records = self.db.customers.count_documents({"mode": mode})
         return records
 
+    def get_debits_count(self, mode="production"):
+        return self.db.debits.count_documents({"mode":mode})
+
     def add_user(self, name, mobile, address: dict, mode="production"):
         id = self.get_users_count(mode) + 1
         result = self.db.customers.insert_one({
@@ -85,7 +88,7 @@ class App:
             print("No user exists, cannot add debit")
             return None
 
-        debit_id = self.db.debits.find({"customer_id": customer_id}).count() + 1
+        debit_id = self.db.debits.find({"customer_id": customer_id,"mode":mode}).count() + 1
         result = self.db.debits.insert_one({"customer_id": customer_id,
                                             "debit_id": debit_id,
                                             "time": datetime.utcnow(),
@@ -222,7 +225,6 @@ class App:
         tz = pytz.timezone("Asia/Kolkata")
         d1 = datetime.date(startdate)
         d2 = datetime.date(enddate)
-        print(d1, d2)
         diff = (d2 - d1).days
         I = diff * self.interest * amount
         return I
@@ -268,7 +270,6 @@ class App:
             time_bought = debit["time"]
             if len(debit["pays"]) == 0:
                 principal_balance = debit["principal"]
-                print(f"Time: {time_bought} {datetime.utcnow()}")
                 I = self.calculate_interest(principal_balance, debit["time"], datetime.utcnow())
             else:
                 principal_balance = debit["pays"][-1]["principal"]
@@ -276,7 +277,7 @@ class App:
                 I = self.calculate_interest(principal_balance, last_pay_obj, datetime.utcnow())
             return_obj.append({"time": time_bought, "principal": principal_balance, "interest": I})
 
-            print(f"Time Bought : {time_bought} Principal Balance : {principal_balance} Interest : {I}")
+            print(f"Customer: {customerid:2}   Principal Balance : {principal_balance:5} Interest : {I:5} Time Bought : {time_bought} ")
         return return_obj
 
     # def get_due_customers(self,mode="production"):
