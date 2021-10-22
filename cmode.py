@@ -1,6 +1,12 @@
 from src.modules import *
+import os
+from colorama import Fore, Back, Style
 
-
+def clear_screen():
+    if os.name == 'posix':
+        _ = os.system('clear')
+    else:
+        _ = os.system('cls')
 class CMode:
     def __init__(self, mode):
         password = ".password.json"
@@ -12,6 +18,7 @@ class CMode:
 
     def print_options(self):
         opt_indexes = {}
+        clear_screen()
         for i, opt in enumerate(self.options):
             print(f"{i}: {opt}")
             opt_indexes[i] = opt
@@ -28,7 +35,7 @@ class CMode:
                               {"doorno": doorno,
                                "street": street},
                               self.mode)
-
+        clear_screen()
         if opt == "create debit":
             id = int(input("Enter Customer id: "))
             enter_date = input("yyy:mm:dd Date: ")
@@ -37,38 +44,48 @@ class CMode:
             print(f"Debit id: {self.app.add_debit_past(id, enter_date, amount, reason, self.mode)}")
             pass
 
-        if opt == "show customers":
+        elif opt == "show customers":
             count = self.app.get_users_count()
             for id in range(1, count + 1):
                 cus = self.app.get_user(id, self.mode)
-                print(f"{id:<3} : {cus['name']:20s}")
+                print(f"{id:<3} : {(Fore.GREEN + cus['name']):20s} {Fore.BLACK}")
             print()
 
-        if opt == "show debits":
+        elif opt == "show debits":
             print("enter customer id or -1 for all debits")
             id = int(input("customer id: "))
             if id != -1:
-                self.app.get_customer_debit_summary(id, self.mode)
+                obj = self.app.get_customer_debit_summary(id, self.mode)
+                for rec in obj:
+                    print(f"{Fore.GREEN}Date{Fore.BLACK}: {str(rec['time']):10} {Fore.GREEN}Principal{Fore.BLACK} :  {rec['principal']:5} {Fore.GREEN}Interest{Fore.BLACK}: {rec['interest']:5}")
             else:
                 count = self.app.get_users_count(self.mode)
                 for id in range(1, count + 1):
-                    self.app.get_customer_debit_summary(id, self.mode)
+                    obj = self.app.get_customer_debit_summary(id, self.mode)
+                    for rec in obj:
+                        print(rec["time"])
+                        print(f"{Fore.GREEN}Date{Fore.BLACK}: {str(rec['time'])} {Fore.GREEN}Principal{Fore.BLACK} :  {rec['principal']:5} {Fore.GREEN}Interest{Fore.BLACK}: {rec['interest']:5}")
                 pass
 
-        if opt == "delete customer":
+        elif opt == "delete customer":
             id = int(input("Enter customer id: "))
             print(self.app.db.customers.delete({"customer_id": id, "mode": self.mode}))
 
-        if opt == "delete debit":
+        elif opt == "delete debit":
             id = int(input("Enter customer id: "))
             d_id = int(input("Enter debit id: "))
             print(self.app.db.debits.delete({"customer_id": id, "debit_id": d_id, "mode": self.mode}))
+
+        input(Fore.GREEN + "Press Enter")
+        clear_screen()
+        print(Fore.BLACK)
+
 
     def run(self):
         while not self.quit:
             opt_indexes = self.print_options()
             try:
-                inp = int(input())
+                inp = int(input("Enter option: "))
                 choosen_opt = opt_indexes[inp]
                 if choosen_opt == "quit":
                     self.quit = True

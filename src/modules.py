@@ -277,7 +277,8 @@ class App:
                 I = self.calculate_interest(principal_balance, last_pay_obj, datetime.utcnow())
             return_obj.append({"time": time_bought, "principal": principal_balance, "interest": I})
 
-            print(f"Customer: {customerid:2}   Principal Balance : {principal_balance:5} Interest : {I:5} Time Bought : {time_bought} ")
+            # print(f"Customer: {customerid:2}   Principal Balance : {principal_balance:5} Interest : {I:5} Time Bought : {time_bought} ")
+        # print(return_obj)
         return return_obj
 
     # def get_due_customers(self,mode="production"):
