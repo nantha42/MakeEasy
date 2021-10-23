@@ -60,7 +60,8 @@ class App:
             "name": name,
             "mobile": mobile,
             "address": address,
-            "mode": mode
+            "mode": mode,
+            "deleted":False
         })
         print("Inserted id:", result.inserted_id)
         return id
@@ -83,7 +84,7 @@ class App:
             print("No customer in that id")
             return False
 
-    def add_debit(self, customer_id, amount: int, reason="", mode="production"):
+    def add_debit(self, customer_id, amount: int, reason="", mode="production",interest_enabled=True):
         if not self.exists_customer(customer_id, mode):
             print("No user exists, cannot add debit")
             return None
@@ -95,11 +96,13 @@ class App:
                                             "principal": amount,
                                             "reason": reason,
                                             "pays": [],
-                                            "mode": mode
+                                            "mode": mode,
+                                            "deleted":False,
+                                            "interest_enabled":interest_enabled
                                             })
         return debit_id
 
-    def add_debit_past(self, customer_id, time_str: str, amount, reason="", mode="production"):
+    def add_debit_past(self, customer_id, time_str: str, amount, reason="", mode="production",interest_enabled=True):
         if not self.exists_customer(customer_id, mode):
             print("No user exists, cannot add debit past")
             return "Error"
@@ -113,7 +116,8 @@ class App:
                                             "principal": amount,
                                             "reason": reason,
                                             "pays": [],
-                                            "mode": mode
+                                            "mode": mode,
+                                            "interest_enabled":interest_enabled
                                             })
         return debit_id
 
@@ -164,6 +168,11 @@ class App:
             return "Error"
 
         debit = self.db.debits.find_one({"customer_id": customer_id, "debit_id": debit_id, "mode": mode})
+        if not debit["interest_enabled"]:
+            print("This is Interestless Debit")
+            return
+
+
         pays = debit["pays"]
 
         if len(pays) > 0:
@@ -245,9 +254,15 @@ class App:
         return self.db.debits.find({"customer_id": customer_id, "mode": mode})
 
     def delete_all_debits(self, mode="test"):
-        return self.db.debits.delete_many({"mode": mode})
+        return self.db.debits.update_many({"mode": mode},{"$set":{"deleted":True}})
 
     def delete_all_customers(self, mode="test"):
+        return self.db.customers.update_many({"mode": mode},{"$set":{"deleted":True}})
+
+    def hard_delete_all_debits(self,mode="test"):
+        return self.db.debits.delete_many({"mode": mode})
+
+    def hard_delete_all_customers(self, mode="test"):
         return self.db.customers.delete_many({"mode": mode})
 
     def read_credentials(self, filename=".password.json"):
@@ -268,13 +283,16 @@ class App:
         return_obj = []
         for debit in debits:
             time_bought = debit["time"]
+            I=0
             if len(debit["pays"]) == 0:
                 principal_balance = debit["principal"]
-                I = self.calculate_interest(principal_balance, debit["time"], datetime.utcnow())
+                if debit["interest_enabled"]:
+                    I = self.calculate_interest(principal_balance, debit["time"], datetime.utcnow())
             else:
                 principal_balance = debit["pays"][-1]["principal"]
                 last_pay_obj = debit["pays"][-1]["time"]
-                I = self.calculate_interest(principal_balance, last_pay_obj, datetime.utcnow())
+                if debit["interest_enabled"]:
+                    I = self.calculate_interest(principal_balance, last_pay_obj, datetime.utcnow())
             return_obj.append({"time": time_bought, "principal": principal_balance, "interest": I})
 
             # print(f"Customer: {customerid:2}   Principal Balance : {principal_balance:5} Interest : {I:5} Time Bought : {time_bought} ")
@@ -323,3 +341,11 @@ class App:
             self.db.debits.insert_many(debits)
             print(f"Inserted {len(debits)} debit records")
         pass
+
+    def update_columns(self):
+        """
+        Used to update documents when new keys has to be added to particular
+        collections
+        """
+        documents = self.db.customers.find({"deleted":{"$exists":False}})
+        self.db.customers.update_many(documents,{"$set":{"deleted":False}})

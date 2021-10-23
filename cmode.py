@@ -10,7 +10,7 @@ def clear_screen():
 class CMode:
     def __init__(self, mode):
         password = ".password.json"
-        self.options = ["create customer", "show customers", "show debits", "create pay", "create debit",
+        self.options = ["create customer", "show customers", "show debits", "create pay", "create debit","create debit interestless",
                         "delete customer", "delete debit", "quit"]
         self.app = App(password)
         self.quit = False
@@ -25,6 +25,7 @@ class CMode:
         return opt_indexes
 
     def act(self, opt):
+        clear_screen()
         if opt == "create customer":
             name = input("Customer Name: ")
             mobile = input("Customer mobile: ")
@@ -35,7 +36,6 @@ class CMode:
                               {"doorno": doorno,
                                "street": street},
                               self.mode)
-        clear_screen()
         if opt == "create debit":
             id = int(input("Enter Customer id: "))
             enter_date = input("yyy:mm:dd Date: ")
@@ -65,7 +65,6 @@ class CMode:
                     for rec in obj:
                         print(rec["time"])
                         print(f"{Fore.GREEN}Date{Fore.BLACK}: {str(rec['time'])} {Fore.GREEN}Principal{Fore.BLACK} :  {rec['principal']:5} {Fore.GREEN}Interest{Fore.BLACK}: {rec['interest']:5}")
-                pass
 
         elif opt == "delete customer":
             id = int(input("Enter customer id: "))
@@ -76,6 +75,12 @@ class CMode:
             d_id = int(input("Enter debit id: "))
             print(self.app.db.debits.delete({"customer_id": id, "debit_id": d_id, "mode": self.mode}))
 
+        elif opt == "create debit interestless":
+            id = int(input("Enter customer id:"))
+            enter_date = input("yyy:mm:dd Date: ")
+            amount = int(input("Enter amount"))
+            reason = input("Debit reason")
+            print(f"Debit id: {self.app.add_debit_past(id, enter_date, amount, reason, self.mode, False)}")
         input(Fore.GREEN + "Press Enter")
         clear_screen()
         print(Fore.BLACK)
@@ -97,6 +102,6 @@ class CMode:
 
 
 if __name__ == '__main__':
-    mode = "production"
+    mode = "test"
     cm = CMode(mode)
     cm.run()
