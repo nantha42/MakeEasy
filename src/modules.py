@@ -347,5 +347,5 @@ class App:
         Used to update documents when new keys has to be added to particular
         collections
         """
-        documents = self.db.customers.find({"deleted":{"$exists":False}})
-        self.db.customers.update_many(documents,{"$set":{"deleted":False}})
+        self.db.customers.update_many({"deleted":{"$exists":False}},{"$set":{"deleted":False}})
+        self.db.debits.update_many({"deleted":{"$exists":False}},{"$set":{"deleted":False}})
