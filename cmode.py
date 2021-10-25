@@ -100,8 +100,7 @@ class CMode:
                 print("Not a valid option,")
                 pass
 
-
 if __name__ == '__main__':
-    mode = "test"
+    mode = "production"
     cm = CMode(mode)
     cm.run()
