@@ -54,6 +54,7 @@ class CMode:
         elif opt == "show debits":
             print("enter customer id or -1 for all debits")
             id = int(input("customer id: "))
+
             if id != -1:
                 obj = self.app.get_customer_debit_summary(id, self.mode)
                 for rec in obj:
@@ -63,7 +64,7 @@ class CMode:
                 for id in range(1, count + 1):
                     obj = self.app.get_customer_debit_summary(id, self.mode)
                     for rec in obj:
-                        print(rec["time"])
+                        # print(rec["time"])
                         print(f"{Fore.GREEN}Date{Fore.BLACK}: {str(rec['time'])} {Fore.GREEN}Principal{Fore.BLACK} :  {rec['principal']:5} {Fore.GREEN}Interest{Fore.BLACK}: {rec['interest']:5}")
 
         elif opt == "delete customer":
@@ -82,7 +83,6 @@ class CMode:
             reason = input("Debit reason")
             print(f"Debit id: {self.app.add_debit_past(id, enter_date, amount, reason, self.mode, False)}")
         input(Fore.GREEN + "Press Enter")
-        clear_screen()
         print(Fore.BLACK)
 
 

@@ -281,7 +281,10 @@ class App:
             return "Error"
         debits = self.db.debits.find({"customer_id": customerid, "mode": mode})
         return_obj = []
-        for debit in debits:
+        # print(debits)
+        # print([debit for debit in debits])
+        debits = [debit for debit in debits]
+        for i,debit in enumerate(debits):
             time_bought = debit["time"]
             I=0
             if len(debit["pays"]) == 0:
@@ -294,9 +297,6 @@ class App:
                 if debit["interest_enabled"]:
                     I = self.calculate_interest(principal_balance, last_pay_obj, datetime.utcnow())
             return_obj.append({"time": time_bought, "principal": principal_balance, "interest": I})
-
-            # print(f"Customer: {customerid:2}   Principal Balance : {principal_balance:5} Interest : {I:5} Time Bought : {time_bought} ")
-        # print(return_obj)
         return return_obj
 
     # def get_due_customers(self,mode="production"):
@@ -349,3 +349,4 @@ class App:
         """
         self.db.customers.update_many({"deleted":{"$exists":False}},{"$set":{"deleted":False}})
         self.db.debits.update_many({"deleted":{"$exists":False}},{"$set":{"deleted":False}})
+        self.db.debits.update_many({"interest_enabled":{"$exists":False}},{"$set":{"interest_enabled":False}})
