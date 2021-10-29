@@ -7,6 +7,7 @@ def clear_screen():
         _ = os.system('clear')
     else:
         _ = os.system('cls')
+
 class CMode:
     def __init__(self, mode):
         password = ".password.json"

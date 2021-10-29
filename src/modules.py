@@ -350,3 +350,11 @@ class App:
         self.db.customers.update_many({"deleted":{"$exists":False}},{"$set":{"deleted":False}})
         self.db.debits.update_many({"deleted":{"$exists":False}},{"$set":{"deleted":False}})
         self.db.debits.update_many({"interest_enabled":{"$exists":False}},{"$set":{"interest_enabled":False}})
+
+    def add_today_collected(self,collection:dict):
+        """
+        Need to update this into db, for each day
+        :param collection:
+        :return:
+        """
+        pass
