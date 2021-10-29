@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 .password
 *.json
+TODO.txt
 
 # C extensions
 *.so
